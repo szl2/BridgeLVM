@@ -10,28 +10,44 @@ conda create -n bridgelvm python=3.11 -y
 conda activate bridgelvm
 pip install -r requirements.txt
 ```
-Tested with PyTorch 2.9.0 (CUDA 12.8) on an NVIDIA RTX 3090 (24 GB).
+Tested with PyTorch 2.9.0 (CUDA 12.8) on an NVIDIA RTX 3090 (24 GB). Run all commands from the repository root.
 
 ## Datasets
-Download each dataset into its folder under `data/`. Step-by-step instructions and the expected folder layout are in [`data/README.md`](data/README.md).
-
 | Task | Dataset | Download |
 |---|---|---|
 | T1.1 Crack classification | SDNET2018 | https://doi.org/10.15142/T3TD19 |
 | T1.2 Bearing condition | BearingCondition | https://doi.org/10.7294/16624642.v1 |
-| T1.3 Spallation classification | CODEBRIM | https://doi.org/10.5281/zenodo.2620293* |
+| T1.3 Spallation classification | CODEBRIM | https://doi.org/10.5281/zenodo.2620293\* |
 | T2.1 Crack segmentation | DeepCrack | https://github.com/yhlleo/DeepCrack |
 | T2.2 Corrosion segmentation | CorrosionCondition | https://doi.org/10.7294/16624663.v2 |
 | T3.1 Deterioration-state synthesis | CorrosionCondition | same as T2.2 |
 
 \* Alternative: https://universe.roboflow.com/defect-detection-edbnh/codebrim-lnsfg
 
+Put each dataset into its folder under `data/` (layouts: [`data/README.md`](data/README.md)):
+```bash
+mkdir -p downloads
+# DeepCrack
+curl -L -o downloads/DeepCrack.zip https://github.com/yhlleo/DeepCrack/raw/master/dataset/DeepCrack.zip
+unzip -q downloads/DeepCrack.zip -d data/DeepCrack
+# CorrosionCondition
+curl -L -o downloads/corrosion.zip https://ndownloader.figshare.com/files/31729733
+unzip -q downloads/corrosion.zip -d downloads
+cp -r "downloads/Corrosion Condition State Classification/512x512/"* data/CorrosionCondition/
+# BearingCondition
+curl -L -o downloads/bearing.zip https://ndownloader.figshare.com/files/30914398
+unzip -q downloads/bearing.zip -d downloads
+cp -r "downloads/Bearing Condition State Classifier/300x300/"* data/BearingCondition/
+```
+- SDNET2018: download in a browser and unzip into `data/SDNET2018/` (folders `D`, `P`, `W`).
+- CODEBRIM: download the original images in a browser, unzip, then run `python scripts/prepare_codebrim.py --source <unzipped folder>`.
+
 The train/validation/test splits used in the paper are fixed in `splits/`.
 
 ## Trained models
-Download `bridgelvm_models_v1.zip` from the [v1.0 release](https://github.com/szl2/BridgeLVM/releases/tag/v1.0) and unzip it in the repository root:
 ```bash
-unzip bridgelvm_models_v1.zip -d models/
+curl -LO https://github.com/szl2/BridgeLVM/releases/download/v1.0/bridgelvm_models_v1.zip
+unzip -q bridgelvm_models_v1.zip -d models/
 ```
 
 | Task | Backbone | LoRA rank | Size |
@@ -44,7 +60,6 @@ unzip bridgelvm_models_v1.zip -d models/
 | T3.1 | ControlNet (SD v1.5) | 8 | 2.9 MB |
 
 ## Test the code
-Evaluate each trained model on its test split:
 ```bash
 python scripts/evaluate.py --task t1.1 --model models/t1.1
 python scripts/evaluate.py --task t1.2 --model models/t1.2
@@ -52,7 +67,6 @@ python scripts/evaluate.py --task t1.3 --model models/t1.3
 python scripts/evaluate.py --task t2.1 --model models/t2.1
 python scripts/evaluate.py --task t2.2 --model models/t2.2
 ```
-Expected output:
 
 | Task | Metric | Test score (%) |
 |---|---|---|
@@ -62,29 +76,31 @@ Expected output:
 | T2.1 | mIoU | 85.74 |
 | T2.2 | Macro F1 | 86.51 |
 
-The T1.3 score is for CODEBRIM images prepared from the Zenodo release. The T1.3 model was trained on the 640×640 images of the Roboflow export, which are resized by a slightly different method; with those images, the T1.3 accuracy is 83.02%.
+T1.3 uses images prepared from the Zenodo release; with the Roboflow images it is 83.02%.
 
-Generate deterioration-state images (T3.1) for the CorrosionCondition test images:
+Deterioration-state images (T3.1) for the 44 CorrosionCondition test images:
 ```bash
 python scripts/synthesize.py --model models/t3.1 --out outputs/t3.1
 ```
 
 ## Train
-BridgeLVM (LoRA) on any task:
+BridgeLVM (LoRA):
 ```bash
 python scripts/train.py --task t2.1 --out runs/t2.1
 python scripts/train_synthesis.py --out runs/t3.1
 ```
-Reference models retrained on the same splits:
+Reference models, retrained on the same splits:
 ```bash
 python scripts/train.py --task t1.1 --arm alexnet    --out runs/ref_t1.1
 python scripts/train.py --task t1.3 --arm vgg16      --out runs/ref_t1.3
 python scripts/train.py --task t2.1 --arm deepcrack  --out runs/ref_t2.1
 python scripts/train.py --task t2.2 --arm deeplabv3p --out runs/ref_t2.2
 ```
-Evaluate the released BearingCondition reference model (https://doi.org/10.7294/16628698.v1):
+Released BearingCondition reference model (https://doi.org/10.7294/16628698.v1, expected accuracy 78.95%):
 ```bash
-python scripts/eval_bearing_reference.py --checkpoint "<unzipped model>/l2_loss/checkpoint_9.pt"
+curl -L -o downloads/bearing_model.zip https://ndownloader.figshare.com/files/30914440
+unzip -q downloads/bearing_model.zip -d downloads
+python scripts/eval_bearing_reference.py --checkpoint downloads/*/l2_loss/checkpoint_9.pt
 ```
 All hyperparameters are in `bridgelvm/configs.py`.
 
