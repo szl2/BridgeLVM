@@ -17,7 +17,7 @@ Tested with PyTorch 2.9.0 (CUDA 12.8) on an NVIDIA RTX 3090 (24 GB). Run all com
 |---|---|---|
 | T1.1 Crack classification | SDNET2018 | https://doi.org/10.15142/T3TD19 |
 | T1.2 Bearing condition | BearingCondition | https://doi.org/10.7294/16624642.v1 |
-| T1.3 Spallation classification | CODEBRIM | https://doi.org/10.5281/zenodo.2620293\* |
+| T1.3 Spallation classification | CODEBRIM | https://doi.org/10.5281/zenodo.2620293 (*)|
 | T2.1 Crack segmentation | DeepCrack | https://github.com/yhlleo/DeepCrack |
 | T2.2 Corrosion segmentation | CorrosionCondition | https://doi.org/10.7294/16624663.v2 |
 | T3.1 Deterioration-state synthesis | CorrosionCondition | same as T2.2 |
