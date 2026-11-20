@@ -1,0 +1,7 @@
+data/*/*
+!data/*/.gitkeep
+models/
+runs/
+outputs/
+__pycache__/
+*.pyc
